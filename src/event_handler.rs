@@ -1,6 +1,6 @@
 mod schedule;
 
-use crate::scheduled_events::announce_vc;
+use crate::scheduled_events::{announce_vc, test_cron};
 use crate::{Data, Error};
 use poise::serenity_prelude as serenity;
 use schedule::schedule;
@@ -21,6 +21,11 @@ pub async fn event_handler(
                 Arc::new(ctx.clone()),
                 "0 0 13 ? * Fri *",
                 announce_vc,
+            ));
+            tokio::spawn(schedule(
+                Arc::new(ctx.clone()),
+                "* */1 * * * ? *",
+                test_cron,
             ));
         }
         serenity::FullEvent::Message { new_message } => {
