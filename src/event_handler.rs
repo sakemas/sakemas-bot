@@ -1,7 +1,11 @@
-use crate::scheduled_events::schedule_vc_announcement;
+mod schedule;
+
+use crate::scheduled_events::announce_vc;
 use crate::{Data, Error};
 use poise::serenity_prelude as serenity;
-use std::sync::{atomic::Ordering, Arc};
+use schedule::schedule;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 pub async fn event_handler(
     ctx: &serenity::Context,
@@ -13,7 +17,11 @@ pub async fn event_handler(
         serenity::FullEvent::Ready { data_about_bot, .. } => {
             println!("Logged in as {}", data_about_bot.user.name);
 
-            tokio::spawn(schedule_vc_announcement(Arc::new(ctx.clone())));
+            tokio::spawn(schedule(
+                Arc::new(ctx.clone()),
+                "0 0 13 ? * Fri *",
+                announce_vc,
+            ));
         }
         serenity::FullEvent::Message { new_message } => {
             if new_message.content.to_lowercase().contains("poise") {
