@@ -14,8 +14,9 @@
 
 ## 環境変数
 
-./Secrets.toml
 ```toml
+# ./Secrets.toml
+
 DISCORD_TOKEN = '***'
 VC_ANNOUNCEMENT_CHANNEL = '***'
 ```
