@@ -23,7 +23,6 @@ pub type Context<'a> = poise::Context<'a, Data, Error>;
 async fn main(#[shuttle_secrets::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
     let discord_token = get_secret(&secret_store, "DISCORD_TOKEN")?;
 
-    set_env_var(&secret_store, "LOG_CHANNEL")?;
     set_env_var(&secret_store, "VC_ANNOUNCEMENT_CHANNEL")?;
     set_env_var(&secret_store, "WELCOME_CHANNEL")?;
     set_env_var(&secret_store, "CAUTION_CHANNEL")?;
