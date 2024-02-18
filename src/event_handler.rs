@@ -1,3 +1,5 @@
+mod guild;
+
 use crate::scheduled_events::schedule_vc_announcement;
 use crate::{Data, Error};
 use poise::serenity_prelude as serenity;
@@ -28,7 +30,9 @@ pub async fn event_handler(
                     .await?;
             }
         }
-        serenity::FullEvent::GuildMemberAddition { new_member } => {}
+        serenity::FullEvent::GuildMemberAddition { new_member } => {
+            guild::member::addition(ctx, new_member).await;
+        }
         _ => {}
     }
     Ok(())

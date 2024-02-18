@@ -1,6 +1,7 @@
+use crate::utils::channel::get_channel_id;
 use chrono::Utc;
 use cron::Schedule;
-use poise::serenity_prelude::{model::id::ChannelId, Context};
+use poise::serenity_prelude::Context;
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::time;
@@ -8,8 +9,7 @@ use tokio::time;
 pub async fn schedule_vc_announcement(ctx: Arc<Context>, cron: &str) {
     let schedule = Schedule::from_str(cron).unwrap();
 
-    let channel_id = std::env::var("TEST_VC_ANNOUNCEMENT_CHANNEL").unwrap();
-    let channel_id = ChannelId::from_str(&channel_id).unwrap();
+    let channel_id = get_channel_id("VC_ANNOUNCEMENT_CHANNEL");
 
     let mut now = Utc::now();
     for next_event in schedule.upcoming(Utc).take(10) {

@@ -1,9 +1,9 @@
 # SAKEM@S bot
 
 ## 機能
+- 新規メンバー加入時のリアクション
 
 ### 実装予定
-- 新規メンバー加入時のリアクション
 - 毎週金曜日22時のVC呑み告知機能
 - DMによる告知の保存、キューイング
 - Twitterとの連携
@@ -18,7 +18,11 @@
 
 ```toml
 # ./Secrets.toml
+# and ./Secrets.dev.toml for development
 
 DISCORD_TOKEN = '***'
 VC_ANNOUNCEMENT_CHANNEL = '***'
+WELCOME_CHANNEL = '***'
+CAUTION_CHANNEL = '***'
+INTRODUCTION_CHANNEL = '***'
 ```
