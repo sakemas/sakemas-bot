@@ -1,4 +1,5 @@
 use crate::{Context, Error};
+use tracing::info;
 
 /// ヘルプメニューを表示します
 #[poise::command(prefix_command, track_edits, slash_command)]
@@ -8,6 +9,7 @@ pub async fn help(
     #[autocomplete = "poise::builtins::autocomplete_command"]
     command: Option<String>,
 ) -> Result<(), Error> {
+    info!("help command executed");
     poise::builtins::help(
         ctx,
         command.as_deref(),

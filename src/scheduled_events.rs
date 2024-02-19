@@ -16,7 +16,7 @@ pub async fn schedule_vc_announcement(ctx: Arc<Context>, cron: &str) {
         let delay = next_event - now;
         time::sleep(delay.to_std().unwrap()).await;
         let _ = channel_id.say(&ctx.http, "イベント告知メッセージ").await;
-        println!("VC announcement complete");
+        tracing::info!("Scheduled event: {:?}", next_event);
         now = Utc::now();
     }
 }
