@@ -1,5 +1,6 @@
-use super::Mentionable;
 use poise::serenity_prelude::model::{id::ChannelId, mention::Mention};
+
+use super::Mentionable;
 
 /// SAKEM@Sのチャンネル
 #[derive(Debug, Clone, Copy)]

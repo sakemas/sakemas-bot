@@ -1,10 +1,11 @@
-mod guild;
-
-use crate::scheduled_events::schedule_vc_announcement;
-use crate::{Data, Error};
 use poise::serenity_prelude as serenity;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+
+use crate::scheduled_events::schedule_vc_announcement;
+use crate::{Data, Error};
+
+mod guild;
 
 pub async fn event_handler(
     ctx: &serenity::Context,

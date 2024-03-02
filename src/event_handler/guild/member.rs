@@ -1,9 +1,9 @@
-use crate::utils::{channel::Channel, Mentionable};
 use poise::serenity_prelude::{
     model::{guild::Member, mention::Mention},
     Context,
 };
-use tracing::info;
+
+use crate::utils::{channel::Channel, Mentionable};
 
 /// Send a welcome message to the welcome channel when a new member joins.
 pub async fn addition(ctx: &Context, new_member: &Member) {

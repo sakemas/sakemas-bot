@@ -1,0 +1,2 @@
+ALTER TABLE announcements
+ADD COLUMN usage_count INT DEFAULT 0 NOT NULL;
