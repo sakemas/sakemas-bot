@@ -9,7 +9,7 @@ use tokio::time;
 pub async fn schedule_vc_announcement(ctx: Arc<Context>, cron: &str) {
     let schedule = Schedule::from_str(cron).unwrap();
 
-    let channel_id = Channel::VcAnnouncement.into_id();
+    let channel_id = Channel::VcAnnouncement.id();
 
     let mut now = Utc::now();
     for next_event in schedule.upcoming(Utc).take(10) {

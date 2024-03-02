@@ -29,20 +29,20 @@ impl std::fmt::Display for Channel {
 
 impl From<Channel> for ChannelId {
     fn from(channel: Channel) -> ChannelId {
-        channel.into_id()
+        channel.id()
     }
 }
 
 impl Mentionable for Channel {
     /// Get the mention of the channel.
     fn mention(&self) -> Mention {
-        Mention::from(self.into_id())
+        Mention::from(self.id())
     }
 }
 
 impl Channel {
     /// Get the channel ID of the channel.
-    pub fn into_id(&self) -> ChannelId {
+    pub fn id(&self) -> ChannelId {
         get_channel_id(self.to_string())
     }
 }
