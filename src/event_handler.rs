@@ -1,5 +1,4 @@
 use poise::serenity_prelude as serenity;
-use std::sync::Arc;
 
 use crate::scheduled_events::schedule_vc_announcement;
 use crate::{Data, Error};
@@ -18,7 +17,7 @@ pub async fn event_handler(
             println!("Logged in as {}", data_about_bot.user.name);
 
             tokio::spawn(schedule_vc_announcement(
-                Arc::new(ctx.clone()),
+                ctx.http.clone(),
                 "0 0 13 * * Fri *",
             ));
         }
