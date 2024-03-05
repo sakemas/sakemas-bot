@@ -10,8 +10,8 @@ mod message;
 pub async fn event_handler(
     ctx: &serenity::Context,
     event: &serenity::FullEvent,
-    framework: poise::FrameworkContext<'_, Data, Error>,
-    _data: &Data,
+    _framework: poise::FrameworkContext<'_, Data, Error>,
+    data: &Data,
 ) -> Result<(), Error> {
     match event {
         serenity::FullEvent::Ready { data_about_bot, .. } => {
@@ -23,7 +23,7 @@ pub async fn event_handler(
             ));
         }
         serenity::FullEvent::Message { new_message } => {
-            message::tweet::post(ctx, new_message, framework).await;
+            message::tweet::post(ctx, new_message, data).await;
         }
         serenity::FullEvent::GuildMemberAddition { new_member } => {
             guild::member::addition(ctx, new_member).await;

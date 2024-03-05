@@ -5,7 +5,7 @@ use sqlx::FromRow;
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::{utils::secret::get_secret, Data, Error};
+use crate::{utils::secret::get_secret, Data};
 
 // Refresh Token を用いて Access Token を取得した際のレスポンス(json)からデータを取得するための構造体
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
@@ -146,11 +146,10 @@ pub async fn tweet(
 }
 
 pub async fn get_access_token(
-    framework: poise::FrameworkContext<'_, Data, Error>,
+    data: &Data,
 ) -> Result<AccessToken, Box<dyn std::error::Error + Send + Sync>> {
-    let user_data = framework.user_data().await;
-    let pool = &user_data.pool;
-    let secret_store = &user_data.secret_store;
+    let pool = &data.pool;
+    let secret_store = &data.secret_store;
 
     let row = sqlx::query_as::<_, TwitterTokenRow>(
         "SELECT token_type, expires_in, access_token, scope, refresh_token FROM twitter_tokens",
@@ -170,12 +169,7 @@ pub async fn get_access_token(
 
     {
         let now = Utc::now();
-        let mut twitter_token_refreshed_at = framework
-            .user_data()
-            .await
-            .twitter_token_refreshed_at
-            .lock()
-            .unwrap();
+        let mut twitter_token_refreshed_at = data.twitter_token_refreshed_at.lock().unwrap();
 
         match twitter_token_refreshed_at.as_ref() {
             // if token is not expired, return it

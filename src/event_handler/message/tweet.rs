@@ -8,14 +8,10 @@ use crate::{
         command::{get_confirmation_serenity, ConfirmStyle},
         twitter::{self, get_access_token},
     },
-    Data, Error,
+    Data,
 };
 
-pub async fn post(
-    ctx: &Context,
-    message: &Message,
-    framework: poise::FrameworkContext<'_, Data, Error>,
-) {
+pub async fn post(ctx: &Context, message: &Message, data: &Data) {
     if message.channel_id == Channel::XPoster.id() && message.author.bot == false {
         let (proceed, mut reply) = get_confirmation_serenity(
             ctx,
@@ -37,7 +33,7 @@ pub async fn post(
                 .await
                 .unwrap();
 
-            let token = get_access_token(framework).await.unwrap();
+            let token = get_access_token(data).await.unwrap();
             twitter::tweet(&token, &message.content).await.unwrap();
 
             reply
