@@ -111,7 +111,7 @@ pub async fn get_confirmation_serenity(
         .await
     {
         let custom_id_type = mci.data.custom_id.rsplitn(2, '_').next().unwrap_or("");
-        settle_confirmation_serenity(Some((&mci, confirm_message)), ctx, &mut reply).await?;
+        settle_confirmation_serenity(Some((&mci, confirm_message)), &ctx.http, &mut reply).await?;
 
         match custom_id_type {
             "true" => return Ok((true, reply)),
@@ -119,23 +119,23 @@ pub async fn get_confirmation_serenity(
         }
     }
 
-    settle_confirmation_serenity(None, ctx, &mut reply).await?;
+    settle_confirmation_serenity(None, &ctx.http, &mut reply).await?;
     Ok((false, reply))
 }
 
 async fn settle_confirmation_serenity(
     mci: Option<(&ComponentInteraction, &str)>,
-    ctx: &serenity::Context,
+    http: &serenity::Http,
     sent_reply: &mut serenity::Message,
 ) -> Result<(), Error> {
     match mci {
         Some(mci) => {
             mci.0
-                .create_response(ctx, CreateInteractionResponse::Acknowledge)
+                .create_response(http, CreateInteractionResponse::Acknowledge)
                 .await?;
             sent_reply
                 .edit(
-                    ctx,
+                    http,
                     EditMessage::new().content(mci.1).components(Vec::new()),
                 )
                 .await?
@@ -143,7 +143,7 @@ async fn settle_confirmation_serenity(
         None => {
             sent_reply
                 .edit(
-                    ctx,
+                    http,
                     EditMessage::new()
                         .content("確認がタイムアウトしました。")
                         .components(Vec::new()),
