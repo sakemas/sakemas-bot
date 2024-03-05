@@ -13,6 +13,8 @@ pub enum Channel {
     Introduction,
     /// VC呑み会の予定
     VcAnnouncement,
+    /// x-poster
+    XPoster,
 }
 
 impl std::fmt::Display for Channel {
@@ -22,6 +24,7 @@ impl std::fmt::Display for Channel {
             Channel::Caution => "CAUTION_CHANNEL",
             Channel::Introduction => "INTRODUCTION_CHANNEL",
             Channel::VcAnnouncement => "VC_ANNOUNCEMENT_CHANNEL",
+            Channel::XPoster => "X_POSTER_CHANNEL",
         };
         write!(f, "{}", id)
     }

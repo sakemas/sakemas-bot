@@ -1,11 +1,12 @@
 #[macro_use]
 extern crate tracing;
 
+use chrono::{DateTime, Utc};
 use poise::serenity_prelude::{ClientBuilder, GatewayIntents};
 use shuttle_secrets::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 use sqlx::PgPool;
-use std::sync::atomic::AtomicU32;
+use std::sync::{Arc, Mutex};
 
 use self::{
     commands::*,
@@ -19,8 +20,9 @@ mod scheduled_events;
 pub mod utils;
 
 pub struct Data {
-    poise_mentions: AtomicU32,
     pool: PgPool,
+    secret_store: SecretStore,
+    twitter_token_refreshed_at: Arc<Mutex<Option<DateTime<Utc>>>>,
 }
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
@@ -34,10 +36,14 @@ async fn main(
 
     let discord_token = get_secret(&secret_store, "DISCORD_TOKEN")?;
 
+    set_env_var(&secret_store, "TWITTER_CLIENT_ID")?;
+    set_env_var(&secret_store, "TWITTER_CLIENT_SECRET")?;
+
     set_env_var(&secret_store, "VC_ANNOUNCEMENT_CHANNEL")?;
     set_env_var(&secret_store, "WELCOME_CHANNEL")?;
     set_env_var(&secret_store, "CAUTION_CHANNEL")?;
     set_env_var(&secret_store, "INTRODUCTION_CHANNEL")?;
+    set_env_var(&secret_store, "X_POSTER_CHANNEL")?;
 
     let intents = GatewayIntents::non_privileged()
         | GatewayIntents::MESSAGE_CONTENT
@@ -48,8 +54,9 @@ async fn main(
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {
-                    poise_mentions: AtomicU32::new(0),
                     pool,
+                    secret_store,
+                    twitter_token_refreshed_at: Arc::new(Mutex::new(None)),
                 })
             })
         })
@@ -60,6 +67,7 @@ async fn main(
                 list_vc_announcements(),
                 add_vc_announcement(),
                 delete_all_vc_announcements(),
+                set_twitter_tokens(),
             ],
             event_handler: |ctx, event, framework, data| {
                 Box::pin(event_handler(ctx, event, framework, data))

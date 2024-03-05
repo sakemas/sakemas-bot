@@ -1,7 +1,8 @@
+use chrono::Utc;
 use poise::CreateReply;
 
 use crate::{
-    utils::command::{get_confirmation, ConfirmStyle},
+    utils::command::{get_confirmation_poise, ConfirmStyle},
     Context, Error,
 };
 
@@ -84,7 +85,7 @@ pub async fn add_vc_announcement(
 /// 管理人のみ: VC呑み告知をすべて削除します。
 #[poise::command(slash_command, required_permissions = "ADMINISTRATOR")]
 pub async fn delete_all_vc_announcements(ctx: Context<'_>) -> Result<(), Error> {
-    let mut proceed = get_confirmation(
+    let mut proceed = get_confirmation_poise(
         &ctx,
         "本当にすべての告知を削除してよろしいですか？",
         ConfirmStyle::DangerOkCancel,
@@ -92,7 +93,8 @@ pub async fn delete_all_vc_announcements(ctx: Context<'_>) -> Result<(), Error> 
     .await?;
 
     if proceed {
-        proceed = get_confirmation(&ctx, "本当の本当に？", ConfirmStyle::DangerOkCancel).await?;
+        proceed =
+            get_confirmation_poise(&ctx, "本当の本当に？", ConfirmStyle::DangerOkCancel).await?;
     }
 
     if proceed {
@@ -158,11 +160,55 @@ pub async fn add_idol(
     Ok(())
 }
 
-/// SAKEM@SのTwitterアカウントからツイートします。
-#[poise::command(slash_command)]
-pub async fn tweet(
+/// 管理人のみ: TwitterのAccess TokenとRefresh Tokenを初期化します。
+#[poise::command(slash_command, required_permissions = "ADMINISTRATOR")]
+pub async fn set_twitter_tokens(
     ctx: Context<'_>,
-    #[description = "ツイートの内容"] tweet: String,
+    #[description = "Access Token"] access_token: String,
+    #[description = "Reflesh Token"] refresh_token: String,
 ) -> Result<(), Error> {
+    let proceed = get_confirmation_poise(
+        &ctx,
+        "入力されたトークンで初期化してよろしいですか？",
+        ConfirmStyle::DangerOkCancel,
+    )
+    .await?;
+
+    // if the user confirmed, update the tokens
+    if proceed {
+        let reply = ctx.say("初期化中...").await?;
+
+        // update the last refreshed time
+        {
+            ctx.data()
+                .twitter_token_refreshed_at
+                .lock()
+                .unwrap()
+                .replace(Utc::now());
+        }
+
+        let pool = &ctx.data().pool;
+
+        sqlx::query(
+            "INSERT INTO twitter_tokens (id, expires_in, access_token, refresh_token)
+            VALUES (1, $1, $2, $3)
+            ON CONFLICT (id) DO UPDATE SET
+            expires_in = EXCLUDED.expires_in,
+            access_token = EXCLUDED.access_token,
+            refresh_token = EXCLUDED.refresh_token",
+        )
+        .bind(Some(0i32))
+        .bind(&access_token)
+        .bind(&refresh_token)
+        .execute(pool)
+        .await?;
+
+        reply
+            .edit(ctx, CreateReply::default().content("初期化しました"))
+            .await?;
+    } else {
+        ctx.say("キャンセルしました").await?;
+    }
+
     Ok(())
 }
