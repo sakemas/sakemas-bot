@@ -1,5 +1,6 @@
-use super::Mentionable;
 use poise::serenity_prelude::model::{id::ChannelId, mention::Mention};
+
+use super::Mentionable;
 
 /// SAKEM@Sのチャンネル
 #[derive(Debug, Clone, Copy)]
@@ -12,6 +13,8 @@ pub enum Channel {
     Introduction,
     /// VC呑み会の予定
     VcAnnouncement,
+    /// x-poster
+    XPoster,
 }
 
 impl std::fmt::Display for Channel {
@@ -21,6 +24,7 @@ impl std::fmt::Display for Channel {
             Channel::Caution => "CAUTION_CHANNEL",
             Channel::Introduction => "INTRODUCTION_CHANNEL",
             Channel::VcAnnouncement => "VC_ANNOUNCEMENT_CHANNEL",
+            Channel::XPoster => "X_POSTER_CHANNEL",
         };
         write!(f, "{}", id)
     }
@@ -28,20 +32,20 @@ impl std::fmt::Display for Channel {
 
 impl From<Channel> for ChannelId {
     fn from(channel: Channel) -> ChannelId {
-        channel.into_id()
+        channel.id()
     }
 }
 
 impl Mentionable for Channel {
     /// Get the mention of the channel.
     fn mention(&self) -> Mention {
-        Mention::from(self.into_id())
+        Mention::from(self.id())
     }
 }
 
 impl Channel {
     /// Get the channel ID of the channel.
-    pub fn into_id(&self) -> ChannelId {
+    pub fn id(&self) -> ChannelId {
         get_channel_id(self.to_string())
     }
 }
