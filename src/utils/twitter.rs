@@ -161,16 +161,16 @@ pub async fn tweet(
         )));
     }
 
-    let media = match attachments.len() {
+    /*let media = match attachments.len() {
         0 => None,
         _ => Some(Media {
             media_ids: Some(upload_media(token.access_token.as_ref().unwrap(), attachments).await?),
         }),
-    };
+    };*/
 
     let tweet = Tweet {
         text: Some(text.to_string()),
-        media,
+        media: None,
     };
     let payload = serde_json::to_string(&tweet)?;
     let client = reqwest::Client::new();

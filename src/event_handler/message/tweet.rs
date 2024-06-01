@@ -36,7 +36,22 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                     .await
                     .unwrap();
 
-                let token = get_access_token(data).await.unwrap();
+                let token = match get_access_token(data).await {
+                    Ok(token) => token,
+                    Err(e) => {
+                        reply
+                            .edit(
+                                &ctx.http,
+                                EditMessage::new()
+                                    .content("トークンの取得に失敗しました。")
+                                    .components(Vec::new()),
+                            )
+                            .await
+                            .unwrap();
+                        eprintln!("Failed to get access token: {:?}", e);
+                        return;
+                    }
+                };
                 twitter::tweet(&token, &message.content, &message.attachments)
                     .await
                     .unwrap();
