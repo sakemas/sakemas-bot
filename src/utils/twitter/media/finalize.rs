@@ -1,3 +1,4 @@
+use async_recursion::async_recursion;
 use reqwest::Client;
 use serde::Deserialize;
 use tokio::time;
@@ -62,6 +63,7 @@ pub async fn finalize(
     Ok(result)
 }
 
+#[async_recursion]
 async fn status(
     client: &Client,
     url: &str,
