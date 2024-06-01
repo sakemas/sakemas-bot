@@ -1,6 +1,6 @@
 use anyhow::Context as _;
 use anyhow::Error;
-use shuttle_secrets::SecretStore;
+use shuttle_runtime::SecretStore;
 
 /// Get a secret from `Secrets.toml` (or `Secrets.dev.toml` in development)
 pub fn get_secret(secret_store: &SecretStore, name: &str) -> Result<String, Error> {
