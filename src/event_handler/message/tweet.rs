@@ -52,7 +52,7 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                             )
                             .await
                             .unwrap();
-                        eprintln!("Failed to get access token: {:?}", e);
+                        info!("Failed to get access token: {:?}", e);
                         return;
                     }
                 };
@@ -72,7 +72,7 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                                 .await
                                 .unwrap();
 
-                            eprintln!("Tweet successfully\n{:?}", data);
+                            info!("Tweet successfully\n{:?}", data);
                         } else {
                             reply
                                 .edit(
@@ -83,6 +83,8 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                                 )
                                 .await
                                 .unwrap();
+
+                            info!("Failed to tweet\n{:?}", result);
                         }
                     }
                     Err(e) => {
@@ -95,6 +97,8 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                             )
                             .await
                             .unwrap();
+
+                        info!("Failed to tweet: {:?}", e);
                     }
                 }
             } else {
