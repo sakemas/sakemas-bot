@@ -44,7 +44,6 @@ impl Clone for AccessToken {
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct Tweet {
     pub text: Option<String>,
-    pub media: Option<Media>,
 }
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
@@ -170,7 +169,6 @@ pub async fn tweet(
 
     let tweet = Tweet {
         text: Some(text.to_string()),
-        media: None,
     };
     let payload = serde_json::to_string(&tweet)?;
     let client = reqwest::Client::new();

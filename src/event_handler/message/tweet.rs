@@ -52,14 +52,41 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                         return;
                     }
                 };
-                twitter::tweet(&token, &message.content, &message.attachments)
-                    .await
-                    .unwrap();
+                let result = twitter::tweet(&token, &message.content, &message.attachments).await;
 
-                reply
-                    .edit(&ctx.http, EditMessage::new().content("ポストしました。"))
-                    .await
-                    .unwrap();
+                match result {
+                    Ok(result) => {
+                        if let Some(data) = result.data {
+                            reply
+                                .edit(&ctx.http, EditMessage::new().content("ポストしました。"))
+                                .await
+                                .unwrap();
+
+                            eprintln!("Tweet successfully\n{:?}", data);
+                        } else {
+                            reply
+                                .edit(
+                                    &ctx.http,
+                                    EditMessage::new()
+                                        .content(format!("ポストに失敗しました。\n```title: {:?}\nresult_type: {:?}\nstatus: {:?}\ndetail: {:?}```", result.title, result.result_type, result.status, result.detail))
+                                        .components(Vec::new()),
+                                )
+                                .await
+                                .unwrap();
+                        }
+                    }
+                    Err(e) => {
+                        reply
+                            .edit(
+                                &ctx.http,
+                                EditMessage::new()
+                                    .content(format!("ポストに失敗しました。\n```{:?}```", e))
+                                    .components(Vec::new()),
+                            )
+                            .await
+                            .unwrap();
+                    }
+                }
             } else {
                 reply
                     .edit(
@@ -77,7 +104,7 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
             .reply(
                 &ctx.http,
                 format!(
-                    "テキストが長すぎます。\nweighted length: **{}**/280",
+                    "テキストが長すぎます。\n`weighted length: {}/280`",
                     parse_result.weighted_length
                 ),
             )
