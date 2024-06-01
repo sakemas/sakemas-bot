@@ -11,11 +11,11 @@ use crate::{
 };
 
 pub async fn post(ctx: &Context, message: &Message, data: &Data) {
-    let parse_result =
-        twitter_text::parse(&message.content, twitter_text_config::config_v3(), true);
+    if message.channel_id == Channel::XPoster.id() && !message.author.bot {
+        let parse_result =
+            twitter_text::parse(&message.content, twitter_text_config::config_v3(), true);
 
-    if parse_result.is_valid {
-        if message.channel_id == Channel::XPoster.id() && !message.author.bot {
+        if parse_result.is_valid {
             let (proceed, mut reply) = get_confirmation_serenity(
                 ctx,
                 message,
@@ -98,27 +98,27 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                     .await
                     .unwrap();
             }
+        } else if parse_result.weighted_length > 280 {
+            message
+                .reply(
+                    &ctx.http,
+                    format!(
+                        "テキストが長すぎます。\n`weighted length: {}/280`",
+                        parse_result.weighted_length
+                    ),
+                )
+                .await
+                .unwrap();
+        } else if parse_result.weighted_length == 0 {
+            message
+                .reply(&ctx.http, "テキストが空です。")
+                .await
+                .unwrap();
+        } else {
+            message
+                .reply(&ctx.http, "無効な文字が含まれています。")
+                .await
+                .unwrap();
         }
-    } else if parse_result.weighted_length > 280 {
-        message
-            .reply(
-                &ctx.http,
-                format!(
-                    "テキストが長すぎます。\n`weighted length: {}/280`",
-                    parse_result.weighted_length
-                ),
-            )
-            .await
-            .unwrap();
-    } else if parse_result.weighted_length == 0 {
-        message
-            .reply(&ctx.http, "テキストが空です。")
-            .await
-            .unwrap();
-    } else {
-        message
-            .reply(&ctx.http, "無効な文字が含まれています。")
-            .await
-            .unwrap();
     }
 }
