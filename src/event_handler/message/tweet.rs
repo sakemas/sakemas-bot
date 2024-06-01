@@ -19,7 +19,11 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
             let (proceed, mut reply) = get_confirmation_serenity(
                 ctx,
                 message,
-                "この内容でポストしてよろしいですか？",
+                format!(
+                    "この内容でポストしてよろしいですか？\n`weighted length: {}/280`",
+                    parse_result.weighted_length
+                )
+                .as_str(),
                 ConfirmStyle::OkCancel,
             )
             .await
@@ -57,8 +61,14 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                 match result {
                     Ok(result) => {
                         if let Some(data) = result.data {
+                            let id = data.id.clone();
+                            let message = match id {
+                                Some(id) => format!("ポストしました。\n`id: {}`\nhttps://x.com/sakemasdiscord/status/{}", id, id),
+                                None => "ポストしました。".to_string(),
+                            };
+
                             reply
-                                .edit(&ctx.http, EditMessage::new().content("ポストしました。"))
+                                .edit(&ctx.http, EditMessage::new().content(message))
                                 .await
                                 .unwrap();
 
