@@ -3,7 +3,7 @@ extern crate tracing;
 
 use chrono::{DateTime, Utc};
 use poise::serenity_prelude::{ClientBuilder, GatewayIntents};
-use shuttle_secrets::SecretStore;
+use shuttle_runtime::SecretStore;
 use shuttle_serenity::ShuttleSerenity;
 use sqlx::PgPool;
 use std::sync::{Arc, Mutex};
@@ -29,7 +29,7 @@ pub type Context<'a> = poise::Context<'a, Data, Error>;
 
 #[shuttle_runtime::main]
 async fn main(
-    #[shuttle_secrets::Secrets] secret_store: SecretStore,
+    #[shuttle_runtime::Secrets] secret_store: SecretStore,
     #[shuttle_shared_db::Postgres] pool: PgPool,
 ) -> ShuttleSerenity {
     sqlx::migrate!().run(&pool).await.unwrap();
@@ -62,7 +62,6 @@ async fn main(
         })
         .options(poise::FrameworkOptions {
             commands: vec![
-                help(),
                 get_vc_announcement(),
                 list_vc_announcements(),
                 add_vc_announcement(),

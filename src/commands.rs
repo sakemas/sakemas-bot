@@ -6,6 +6,7 @@ use crate::{
     Context, Error,
 };
 
+/*
 /// ヘルプメニューを表示します
 #[poise::command(prefix_command, track_edits, slash_command)]
 pub async fn help(
@@ -26,6 +27,7 @@ pub async fn help(
     .await?;
     Ok(())
 }
+*/
 
 /// 管理人のみ: VC呑み告知を取得し、使用回数を増やします。
 #[poise::command(slash_command, required_permissions = "ADMINISTRATOR")]

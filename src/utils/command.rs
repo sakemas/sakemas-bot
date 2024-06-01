@@ -39,10 +39,10 @@ pub async fn get_confirmation_poise(
         .author_id(ctx.author().id)
         .channel_id(ctx.channel_id())
         .timeout(Duration::from_secs(20))
-        .filter(move |mci| mci.data.custom_id.splitn(2, '_').next().unwrap_or("") == id.to_string())
+        .filter(move |mci| mci.data.custom_id.split('_').next().unwrap_or("") == id.to_string())
         .await
     {
-        let custom_id_type = mci.data.custom_id.rsplitn(2, '_').next().unwrap_or("");
+        let custom_id_type = mci.data.custom_id.rsplit('_').next().unwrap_or("");
         settle_confirmation_poise(Some((&mci, message)), ctx, sent_reply).await?;
 
         match custom_id_type {
@@ -107,10 +107,10 @@ pub async fn get_confirmation_serenity(
         .author_id(message.author.id)
         .channel_id(message.channel_id)
         .timeout(Duration::from_secs(20))
-        .filter(move |mci| mci.data.custom_id.splitn(2, '_').next().unwrap_or("") == id.to_string())
+        .filter(move |mci| mci.data.custom_id.split('_').next().unwrap_or("") == id.to_string())
         .await
     {
-        let custom_id_type = mci.data.custom_id.rsplitn(2, '_').next().unwrap_or("");
+        let custom_id_type = mci.data.custom_id.rsplit('_').next().unwrap_or("");
         settle_confirmation_serenity(Some((&mci, confirm_message)), &ctx.http, &mut reply).await?;
 
         match custom_id_type {

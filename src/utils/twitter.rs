@@ -1,11 +1,15 @@
 use chrono::Utc;
+use poise::serenity_prelude::Attachment;
 use serde::{Deserialize, Serialize};
-use shuttle_secrets::SecretStore;
+use shuttle_runtime::SecretStore;
 use sqlx::FromRow;
 use std::collections::HashMap;
 use std::time::Duration;
+use thiserror::Error;
 
 use crate::{utils::secret::get_secret, Data};
+
+pub mod media;
 
 // Refresh Token を用いて Access Token を取得した際のレスポンス(json)からデータを取得するための構造体
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
@@ -43,6 +47,11 @@ pub struct Tweet {
 }
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+pub struct Media {
+    pub media_ids: Option<Vec<u64>>,
+}
+
+#[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct TweetResult {
     // 成功した場合のレスポンス
     pub data: Option<TweetResultData>,
@@ -71,6 +80,21 @@ struct TwitterTokenRow {
     refresh_token: String,
 }
 
+#[derive(Debug, Error)]
+pub enum TwitterError {
+    #[error("Network error occurred: {0}")]
+    NetworkError(#[from] reqwest::Error),
+
+    #[error("Failed to parse data")]
+    ParseError,
+
+    #[error("IO error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("Unhandled error: {0}")]
+    Other(String),
+}
+
 // curl -X POST https://api.twitter.com/2/oauth2/token \
 // --basic -u "<あなたの Client ID>:<あなたの Client Secret>" \
 // -H "Content-Type: application/x-www-form-urlencoded" \
@@ -81,9 +105,15 @@ struct TwitterTokenRow {
 pub async fn refresh_access_token(
     token: &mut AccessToken,
     secret_store: &SecretStore,
-) -> Result<AccessToken, Box<dyn std::error::Error + Send + Sync>> {
-    let client_id = get_secret(secret_store, "TWITTER_CLIENT_ID")?;
-    let client_secret = get_secret(secret_store, "TWITTER_CLIENT_SECRET")?;
+) -> Result<AccessToken, TwitterError> {
+    let client_id = match get_secret(secret_store, "TWITTER_CLIENT_ID") {
+        Ok(v) => v,
+        Err(e) => return Err(TwitterError::Other(e.to_string())),
+    };
+    let client_secret = match get_secret(secret_store, "TWITTER_CLIENT_SECRET") {
+        Ok(v) => v,
+        Err(e) => return Err(TwitterError::Other(e.to_string())),
+    };
     let mut params = HashMap::new();
     let client = reqwest::Client::new();
 
@@ -97,7 +127,8 @@ pub async fn refresh_access_token(
         // .header(reqwest::header::CONTENT_TYPE, "application/x-www-form-urlencoded") は自動で設定されるので不要
         .form(&params)
         .send()
-        .await?
+        .await
+        .map_err(TwitterError::from)?
         .json::<AccessToken>()
         .await;
 
@@ -109,7 +140,7 @@ pub async fn refresh_access_token(
 
     match result {
         Ok(v) => Ok(v),
-        Err(e) => Err(Box::new(e)),
+        Err(_) => Err(TwitterError::ParseError),
     }
 }
 
@@ -121,7 +152,21 @@ pub async fn refresh_access_token(
 pub async fn tweet(
     token: &AccessToken,
     text: &str,
+    attachments: &Vec<Attachment>,
 ) -> Result<TweetResult, Box<dyn std::error::Error + Send + Sync>> {
+    if attachments.len() > 4 {
+        return Err(Box::new(TwitterError::Other(
+            "The number of attachments must be less than or equal to 4.".to_string(),
+        )));
+    }
+
+    /*let media = match attachments.len() {
+        0 => None,
+        _ => Some(Media {
+            media_ids: Some(upload_media(token.access_token.as_ref().unwrap(), attachments).await?),
+        }),
+    };*/
+
     let tweet = Tweet {
         text: Some(text.to_string()),
     };
@@ -141,8 +186,33 @@ pub async fn tweet(
 
     match result {
         Ok(v) => Ok(v),
-        Err(e) => Err(Box::new(e)),
+        Err(e) => Err(Box::new(TwitterError::Other(e.to_string()))),
     }
+}
+
+async fn upload_media(
+    token: &str,
+    attachments: &Vec<Attachment>,
+) -> Result<Vec<u64>, Box<dyn std::error::Error + Send + Sync>> {
+    let mut media_ids = Vec::new();
+
+    let mut tasks = Vec::new();
+
+    for attachment in attachments {
+        let token = token.to_string();
+        let attachment = attachment.clone();
+
+        let task = tokio::spawn(async move { media::upload_media(&token, &attachment).await });
+
+        tasks.push(task);
+    }
+
+    for task in tasks {
+        let media_id = task.await??.media_id;
+        media_ids.push(media_id);
+    }
+
+    Ok(media_ids)
 }
 
 pub async fn get_access_token(
@@ -171,23 +241,20 @@ pub async fn get_access_token(
         let now = Utc::now();
         let mut twitter_token_refreshed_at = data.twitter_token_refreshed_at.lock().unwrap();
 
-        match twitter_token_refreshed_at.as_ref() {
+        if let Some(refreshed_at) = twitter_token_refreshed_at.as_ref() {
             // if token is not expired, return it
-            Some(refreshed_at) => {
-                let duration = now.signed_duration_since(*refreshed_at);
-                let duration = duration.to_std()?;
-                let expires_in = token.expires_in.unwrap_or(7200);
-                if duration < Duration::from_secs(expires_in as u64) {
-                    return Ok(token);
-                }
+            let duration = now.signed_duration_since(*refreshed_at);
+            let duration = duration.to_std()?;
+            let expires_in = token.expires_in.unwrap_or(7200);
+            if duration < Duration::from_secs(expires_in as u64) {
+                return Ok(token);
             }
-            None => {}
         }
 
         let _ = twitter_token_refreshed_at.replace(now);
     }
 
-    let result = refresh_access_token(&mut token, &secret_store).await?;
+    let result = refresh_access_token(&mut token, secret_store).await?;
 
     sqlx::query(
         "UPDATE twitter_tokens
