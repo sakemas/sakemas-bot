@@ -62,7 +62,6 @@ async fn main(
         })
         .options(poise::FrameworkOptions {
             commands: vec![
-                help(),
                 get_vc_announcement(),
                 list_vc_announcements(),
                 add_vc_announcement(),
