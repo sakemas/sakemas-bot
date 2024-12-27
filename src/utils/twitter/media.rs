@@ -9,12 +9,12 @@ pub async fn upload_media(
     additional_owners: Option<String>,
 ) -> anyhow::Result<(Response, Headers)> {
     // INIT
-    let file_size = attachment.size as u64;
     let media_type = attachment
         .content_type
         .as_ref()
         .expect("attachment content type is missing");
     let bytes = attachment.download().await?;
+    let file_size = bytes.len() as u64;
     let authentication = BearerAuthentication::new(token.to_owned());
 
     let data = post_media_upload_init::Data {
