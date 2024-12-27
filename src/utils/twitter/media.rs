@@ -14,11 +14,10 @@ pub async fn upload_media(
         .as_ref()
         .expect("attachment content type is missing");
     let bytes = attachment.download().await?;
-    let file_size = bytes.len() as u64;
     let authentication = BearerAuthentication::new(token.to_owned());
 
     let data = post_media_upload_init::Data {
-        total_bytes: file_size,
+        total_bytes: attachment.size as u64,
         media_type: media_type.to_owned(),
         media_category,
         additional_owners,
@@ -30,7 +29,7 @@ pub async fn upload_media(
     tracing::info!(media_id = media_id, "post_media_upload_init");
 
     // APPEND
-    execute_append(&bytes, &authentication, file_size, &media_id).await?;
+    execute_append(&bytes, &authentication, &media_id).await?;
 
     // FINALIZE
     let data = post_media_upload_finalize::Data {
@@ -46,32 +45,26 @@ pub async fn upload_media(
 async fn execute_append(
     data: &[u8],
     authentication: &impl Authentication,
-    file_size: u64,
     media_id: &str,
 ) -> anyhow::Result<()> {
-    let mut segment_index = 0;
-    while segment_index * 5000000 < file_size {
-        let read_size: usize = if (segment_index + 1) * 5000000 < file_size {
-            5000000
-        } else {
-            (file_size - segment_index * 5000000) as usize
-        };
-        let chunk = data[segment_index as usize * 5000000..(segment_index as usize * 5000000 + read_size)].to_vec();
-        let cursor = Cursor::new(chunk);
+    let mut itr = data.chunks(5000000);
+
+    for (i, chunk) in itr.by_ref().enumerate() {
+        let cursor = Cursor::new(chunk.to_vec());
         let data = post_media_upload_append::Data {
             media_id: media_id.to_owned(),
-            segment_index,
+            segment_index: i as u64,
             cursor,
         };
         let _ = post_media_upload_append::Api::new(data)
             .execute(authentication)
             .await?;
+
         tracing::info!(
-            segment_index = segment_index,
+            segment_index = i,
             media_id = media_id,
             "post_media_upload_append"
         );
-        segment_index += 1;
     }
     Ok(())
 }
