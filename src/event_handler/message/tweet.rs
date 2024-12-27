@@ -16,6 +16,14 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
             twitter_text::parse(&message.content, twitter_text_config::config_v3(), true);
 
         if parse_result.is_valid {
+            if message.attachments.len() > 4 {
+                message
+                    .reply(&ctx.http, "画像は4枚までです。")
+                    .await
+                    .unwrap();
+                return;
+            }
+
             let (proceed, mut reply) = get_confirmation_serenity(
                 ctx,
                 message,

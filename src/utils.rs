@@ -5,6 +5,7 @@ pub mod command;
 pub mod emoji;
 pub mod reaction;
 pub mod secret;
+pub mod serde;
 pub mod twitter;
 
 pub trait Mentionable {

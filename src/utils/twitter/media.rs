@@ -1,108 +1,77 @@
+use std::io::Cursor;
 use poise::serenity_prelude::Attachment;
-use reqwest::Client;
-use serde::Deserialize;
-
-mod append;
-mod finalize;
-mod init;
-
-#[derive(Debug, Deserialize)]
-pub struct MediaUploadResult {
-    pub media_id: u64,
-    pub media_id_string: String,
-    pub size: u32,
-    pub expires_after_secs: u32,
-    pub image: Option<ImageResultData>,
-    pub video: Option<VideoResultData>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ImageUploadResult {
-    media_id: u64,
-    media_id_string: String,
-    size: u32,
-    expires_after_secs: u32,
-    pub image: ImageResultData,
-}
-
-#[derive(Debug, Deserialize)]
-struct VideoUploadResult {
-    media_id: u64,
-    media_id_string: String,
-    size: u32,
-    expires_after_secs: u32,
-    pub video: VideoResultData,
-}
-
-#[derive(Debug, Deserialize)]
-struct ImageResultData {
-    image_type: String,
-    w: Option<u32>,
-    h: Option<u32>,
-}
-
-#[derive(Debug, Deserialize)]
-struct VideoResultData {
-    video_type: String,
-}
-
-pub struct MediaUploadData {
-    media_data: Vec<u8>,
-    media_type: String,
-    media_category: Option<String>,
-}
-
-impl MediaUploadData {
-    pub fn builder() -> MediaUploadDataBuilder {
-        MediaUploadDataBuilder::default()
-    }
-}
-
-#[derive(Default)]
-pub struct MediaUploadDataBuilder {
-    media_data: Vec<u8>,
-    media_type: String,
-    media_category: Option<String>,
-}
-
-impl MediaUploadDataBuilder {
-    pub fn media_data(&mut self, media_data: Vec<u8>) -> &mut Self {
-        self.media_data = media_data;
-        self
-    }
-
-    pub fn media_category(&mut self, media_category: String) -> &mut Self {
-        self.media_category = Some(media_category);
-        self
-    }
-
-    pub fn media_type(&mut self, media_type: String) -> &mut Self {
-        self.media_type = media_type;
-        self
-    }
-
-    pub fn build(&self) -> MediaUploadData {
-        MediaUploadData {
-            media_data: self.media_data.clone(),
-            media_category: self.media_category.clone(),
-            media_type: self.media_type.clone(),
-        }
-    }
-}
+use twapi_v2::{api::{Authentication, BearerAuthentication}, upload::{post_media_upload_append, post_media_upload_init, post_media_upload_finalize, media_category::MediaCategory, response::Response}, headers::Headers};
 
 pub async fn upload_media(
     token: &str,
     attachment: &Attachment,
-) -> Result<MediaUploadResult, Box<dyn std::error::Error + Send + Sync>> {
-    let client = Client::new();
-    let url = "https://upload.twitter.com/1.1/media/upload.json";
+    media_category: Option<MediaCategory>,
+    additional_owners: Option<String>,
+) -> anyhow::Result<(Response, Headers)> {
+    // INIT
+    let file_size = attachment.size as u64;
+    let media_type = attachment
+        .content_type
+        .as_ref()
+        .expect("attachment content type is missing");
+    let bytes = attachment.download().await?;
+    let authentication = BearerAuthentication::new(token.to_owned());
 
-    let data = attachment.download().await?;
+    let data = post_media_upload_init::Data {
+        total_bytes: file_size,
+        media_type: media_type.to_owned(),
+        media_category,
+        additional_owners,
+    };
+    let (response, _) = post_media_upload_init::Api::new(data)
+        .execute(&authentication)
+        .await?;
+    let media_id = response.media_id_string;
+    tracing::info!(media_id = media_id, "post_media_upload_init");
 
-    let init_response = init::init(&client, url, token, attachment).await?;
-    let media_id = init_response.media_id;
+    // APPEND
+    execute_append(&bytes, &authentication, file_size, &media_id).await?;
 
-    append::append(&client, url, token, &media_id, data).await?;
+    // FINALIZE
+    let data = post_media_upload_finalize::Data {
+        media_id: media_id.clone(),
+    };
+    let res = post_media_upload_finalize::Api::new(data)
+        .execute(&authentication)
+        .await?;
+    tracing::info!(media_id = media_id, "post_media_upload_finalize");
+    Ok(res)
+}
 
-    finalize::finalize(&client, url, token, &media_id).await
+async fn execute_append(
+    data: &[u8],
+    authentication: &impl Authentication,
+    file_size: u64,
+    media_id: &str,
+) -> anyhow::Result<()> {
+    let mut segment_index = 0;
+    while segment_index * 5000000 < file_size {
+        let read_size: usize = if (segment_index + 1) * 5000000 < file_size {
+            5000000
+        } else {
+            (file_size - segment_index * 5000000) as usize
+        };
+        let chunk = data[segment_index as usize * 5000000..(segment_index as usize * 5000000 + read_size)].to_vec();
+        let cursor = Cursor::new(chunk);
+        let data = post_media_upload_append::Data {
+            media_id: media_id.to_owned(),
+            segment_index,
+            cursor,
+        };
+        let _ = post_media_upload_append::Api::new(data)
+            .execute(authentication)
+            .await?;
+        tracing::info!(
+            segment_index = segment_index,
+            media_id = media_id,
+            "post_media_upload_append"
+        );
+        segment_index += 1;
+    }
+    Ok(())
 }

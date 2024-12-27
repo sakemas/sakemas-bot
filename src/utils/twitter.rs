@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 use thiserror::Error;
 
-use crate::{utils::secret::get_secret, Data};
+use crate::{utils::{secret::get_secret, serde::u64_as_string_vec}, Data};
 
 pub mod media;
 
@@ -43,11 +43,16 @@ impl Clone for AccessToken {
 // ツイート際のレスポンス(json)からデータを取得するための構造体
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct Tweet {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub text: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub media: Option<Media>,
 }
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 pub struct Media {
+    #[serde(with = "u64_as_string_vec")]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub media_ids: Option<Vec<u64>>,
 }
 
@@ -152,7 +157,7 @@ pub async fn refresh_access_token(
 pub async fn tweet(
     token: &AccessToken,
     text: &str,
-    attachments: &Vec<Attachment>,
+    attachments: &[Attachment],
 ) -> Result<TweetResult, Box<dyn std::error::Error + Send + Sync>> {
     if attachments.len() > 4 {
         return Err(Box::new(TwitterError::Other(
@@ -160,15 +165,16 @@ pub async fn tweet(
         )));
     }
 
-    /*let media = match attachments.len() {
+    let media = match attachments.len() {
         0 => None,
         _ => Some(Media {
             media_ids: Some(upload_media(token.access_token.as_ref().unwrap(), attachments).await?),
         }),
-    };*/
+    };
 
     let tweet = Tweet {
         text: Some(text.to_string()),
+        media,
     };
     let payload = serde_json::to_string(&tweet)?;
     let client = reqwest::Client::new();
@@ -190,9 +196,9 @@ pub async fn tweet(
     }
 }
 
-async fn upload_media(
+pub async fn upload_media(
     token: &str,
-    attachments: &Vec<Attachment>,
+    attachments: &[Attachment],
 ) -> Result<Vec<u64>, Box<dyn std::error::Error + Send + Sync>> {
     let mut media_ids = Vec::new();
 
@@ -202,13 +208,13 @@ async fn upload_media(
         let token = token.to_string();
         let attachment = attachment.clone();
 
-        let task = tokio::spawn(async move { media::upload_media(&token, &attachment).await });
+        let task = tokio::spawn(async move { media::upload_media(&token, &attachment, None, None).await });
 
         tasks.push(task);
     }
 
     for task in tasks {
-        let media_id = task.await??.media_id;
+        let media_id = task.await??.0.media_id;
         media_ids.push(media_id);
     }
 
