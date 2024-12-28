@@ -208,13 +208,13 @@ pub async fn upload_media(
         let token = token.to_string();
         let attachment = attachment.clone();
 
-        let task = tokio::spawn(async move { media::upload_media(&token, &attachment, None, None).await });
+        let task = tokio::spawn(async move { media::upload_media(&token, &attachment, None).await });
 
         tasks.push(task);
     }
 
     for task in tasks {
-        let media_id = task.await??.0.media_id;
+        let media_id = task.await??.media_id;
         media_ids.push(media_id);
     }
 
