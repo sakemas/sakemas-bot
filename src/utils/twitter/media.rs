@@ -1,9 +1,11 @@
 use poise::serenity_prelude::Attachment;
-use twapi_v2::upload::response::Response;
+use twapi_v2::{upload::response::Response, headers::Headers};
 
 mod init;
 mod append;
 mod finalize;
+
+const UPLOAD_URL: &str = "https://upload.twitter.com/1.1/media/upload.json";
 
 #[derive(Debug, thiserror::Error)]
 pub enum MediaUploadError {
@@ -21,9 +23,9 @@ pub async fn upload_media(
     token: &str,
     attachment: &Attachment,
     additional_owners: Option<String>,
-) -> Result<Response, MediaUploadError> {
+) -> Result<(Response, Headers), MediaUploadError> {
     // INIT
-    let response = init::init(token, attachment, additional_owners)
+    let (response, _header) = init::init(token, attachment, additional_owners)
         .await
         .map_err(MediaUploadError::InitError)?;
     let media_id = response.media_id;

@@ -214,7 +214,7 @@ pub async fn upload_media(
     }
 
     for task in tasks {
-        let media_id = task.await??.media_id;
+        let media_id = task.await??.0.media_id;
         media_ids.push(media_id);
     }
 
