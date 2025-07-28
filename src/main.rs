@@ -66,6 +66,7 @@ async fn main(
                 list_vc_announcements(),
                 add_vc_announcement(),
                 delete_all_vc_announcements(),
+                delete_tweet(),
                 set_twitter_tokens(),
             ],
             event_handler: |ctx, event, framework, data| {

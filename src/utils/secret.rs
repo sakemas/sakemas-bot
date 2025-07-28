@@ -6,12 +6,14 @@ use shuttle_runtime::SecretStore;
 pub fn get_secret(secret_store: &SecretStore, name: &str) -> Result<String, Error> {
     secret_store
         .get(name)
-        .context(format!("'{}' was not found", name))
+        .context(format!("'{name}' was not found"))
 }
 
 /// Set an environment variable from a secret
 pub fn set_env_var(secret_store: &SecretStore, name: &str) -> Result<(), Error> {
     let value = get_secret(secret_store, name)?;
-    std::env::set_var(name, value);
+    unsafe {
+        std::env::set_var(name, value);
+    }
     Ok(())
 }
