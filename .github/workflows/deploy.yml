@@ -3,55 +3,51 @@ name: Shuttle Deploy
 on:
   push:
     branches: ["main"]
-  pull_request_target:
-    types: [closed]
-    branches: ["main"]
+  pull_request_review:
+    types: [submitted]
   workflow_dispatch:
 
 jobs:
-  security-check:
-    if: github.event_name == 'pull_request_target'
+  debug:
     runs-on: ubuntu-latest
-    outputs:
-      approved: ${{ steps.check.outputs.approved }}
     steps:
-      - name: Check if PR was approved before merge
-        id: check
-        uses: actions/github-script@v7
-        with:
-          script: |
-            if (!context.payload.pull_request.merged) {
-              core.setOutput('approved', 'false');
-              return;
-            }
+      - name: Debug info
+        run: |
+          echo "=== Event Information ==="
+          echo "Event: ${{ github.event_name }}"
+          echo "Action: ${{ github.event.action }}"
+          echo "Repository: ${{ github.repository }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Ref: ${{ github.ref }}"
 
-            const { data: reviews } = await github.rest.pulls.listReviews({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-            });
-
-            const approvedReviews = reviews.filter(review =>
-              review.state === 'APPROVED' &&
-              review.user.type !== 'Bot'
-            );
-
-            core.setOutput('approved', approvedReviews.length > 0 ? 'true' : 'false');
+          if [ "${{ github.event_name }}" = "pull_request_review" ]; then
+            echo "=== PR Review Information ==="
+            echo "Review state: ${{ github.event.review.state }}"
+            echo "PR number: ${{ github.event.pull_request.number }}"
+            echo "PR base branch: ${{ github.event.pull_request.base.ref }}"
+            echo "Reviewer: ${{ github.event.review.user.login }}"
+          fi
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [security-check]
+    needs: debug
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'pull_request_target' &&
-       needs.security-check.outputs.approved == 'true') ||
+      (github.event_name == 'pull_request_review' &&
+       github.event.review.state == 'approved' &&
+       github.event.pull_request.base.ref == 'main') ||
       github.event_name == 'workflow_dispatch'
 
     steps:
+      - name: Show deploy conditions
+        run: |
+          echo "Deploy conditions met!"
+          echo "Event: ${{ github.event_name }}"
+
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.merge_commit_sha || github.sha }}
+          ref: ${{ github.event_name == 'pull_request_review' && github.event.pull_request.head.sha || github.sha }}
 
       - uses: shuttle-hq/deploy-action@v2
         with:
