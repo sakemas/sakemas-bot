@@ -3,14 +3,40 @@ name: Shuttle Deploy
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
+  pull_request_review:
+    types: [submitted]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # 承認されたレビューまたはmainブランチへのpushの場合のみ実行
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request_review' &&
+       github.event.review.state == 'approved' &&
+       github.event.pull_request.base.ref == 'main') ||
+      github.event_name == 'workflow_dispatch'
+
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # PRレビューの場合はPRのHEADをチェックアウト、それ以外はデフォルト
+          ref: ${{ github.event_name == 'pull_request_review' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Deploy info
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          if [ "${{ github.event_name }}" = "pull_request_review" ]; then
+            echo "PR #${{ github.event.pull_request.number }} approved by ${{ github.event.review.user.login }}"
+            echo "Deploying PR changes..."
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "Deploying main branch changes..."
+          else
+            echo "Manual deployment triggered"
+          fi
+
       - uses: shuttle-hq/deploy-action@v2
         with:
           shuttle-api-key: ${{ secrets.SHUTTLE_API_KEY }}
