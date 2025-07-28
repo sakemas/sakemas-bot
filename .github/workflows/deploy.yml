@@ -1,41 +1,57 @@
-name: Shuttle Deploy
+name: Shuttle Deploy (Safe Fork Handling)
 
 on:
   push:
     branches: ["main"]
-  pull_request_review:
-    types: [submitted]
+  pull_request_target:
+    types: [closed]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
+  security-check:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    outputs:
+      approved: ${{ steps.check.outputs.approved }}
+    steps:
+      - name: Check if PR was approved before merge
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if (!context.payload.pull_request.merged) {
+              core.setOutput('approved', 'false');
+              return;
+            }
+
+            const { data: reviews } = await github.rest.pulls.listReviews({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+            });
+
+            const approvedReviews = reviews.filter(review =>
+              review.state === 'APPROVED' &&
+              review.user.type !== 'Bot'
+            );
+
+            core.setOutput('approved', approvedReviews.length > 0 ? 'true' : 'false');
+
   deploy:
     runs-on: ubuntu-latest
-    # 承認されたレビューまたはmainブランチへのpushの場合のみ実行
+    needs: [security-check]
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'pull_request_review' &&
-       github.event.review.state == 'approved' &&
-       github.event.pull_request.base.ref == 'main') ||
+      (github.event_name == 'pull_request_target' &&
+       needs.security-check.outputs.approved == 'true') ||
       github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          # PRレビューの場合はPRのHEADをチェックアウト、それ以外はデフォルト
-          ref: ${{ github.event_name == 'pull_request_review' && github.event.pull_request.head.sha || github.sha }}
-
-      - name: Deploy info
-        run: |
-          echo "Event: ${{ github.event_name }}"
-          if [ "${{ github.event_name }}" = "pull_request_review" ]; then
-            echo "PR #${{ github.event.pull_request.number }} approved by ${{ github.event.review.user.login }}"
-            echo "Deploying PR changes..."
-          elif [ "${{ github.event_name }}" = "push" ]; then
-            echo "Deploying main branch changes..."
-          else
-            echo "Manual deployment triggered"
-          fi
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.merge_commit_sha || github.sha }}
 
       - uses: shuttle-hq/deploy-action@v2
         with:
