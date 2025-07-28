@@ -26,7 +26,7 @@ impl std::fmt::Display for Channel {
             Channel::VcAnnouncement => "VC_ANNOUNCEMENT_CHANNEL",
             Channel::XPoster => "X_POSTER_CHANNEL",
         };
-        write!(f, "{}", id)
+        write!(f, "{id}")
     }
 }
 

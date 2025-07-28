@@ -1,108 +1,74 @@
 use poise::serenity_prelude::Attachment;
-use reqwest::Client;
-use serde::Deserialize;
+use twapi_v2::{
+    api::{post_2_media_upload_initialize::MediaCategory, BearerAuthentication},
+    upload_v2::{check_processing, get_media_id},
+};
 
-mod append;
-mod finalize;
-mod init;
+mod upload_from_bytes; // temp
+use upload_from_bytes::upload_media_from_bytes;
 
-#[derive(Debug, Deserialize)]
-pub struct MediaUploadResult {
-    pub media_id: u64,
-    pub media_id_string: String,
-    pub size: u32,
-    pub expires_after_secs: u32,
-    pub image: Option<ImageResultData>,
-    pub video: Option<VideoResultData>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ImageUploadResult {
-    media_id: u64,
-    media_id_string: String,
-    size: u32,
-    expires_after_secs: u32,
-    pub image: ImageResultData,
-}
-
-#[derive(Debug, Deserialize)]
-struct VideoUploadResult {
-    media_id: u64,
-    media_id_string: String,
-    size: u32,
-    expires_after_secs: u32,
-    pub video: VideoResultData,
-}
-
-#[derive(Debug, Deserialize)]
-struct ImageResultData {
-    image_type: String,
-    w: Option<u32>,
-    h: Option<u32>,
-}
-
-#[derive(Debug, Deserialize)]
-struct VideoResultData {
-    video_type: String,
-}
-
-pub struct MediaUploadData {
-    media_data: Vec<u8>,
-    media_type: String,
-    media_category: Option<String>,
-}
-
-impl MediaUploadData {
-    pub fn builder() -> MediaUploadDataBuilder {
-        MediaUploadDataBuilder::default()
-    }
-}
-
-#[derive(Default)]
-pub struct MediaUploadDataBuilder {
-    media_data: Vec<u8>,
-    media_type: String,
-    media_category: Option<String>,
-}
-
-impl MediaUploadDataBuilder {
-    pub fn media_data(&mut self, media_data: Vec<u8>) -> &mut Self {
-        self.media_data = media_data;
-        self
-    }
-
-    pub fn media_category(&mut self, media_category: String) -> &mut Self {
-        self.media_category = Some(media_category);
-        self
-    }
-
-    pub fn media_type(&mut self, media_type: String) -> &mut Self {
-        self.media_type = media_type;
-        self
-    }
-
-    pub fn build(&self) -> MediaUploadData {
-        MediaUploadData {
-            media_data: self.media_data.clone(),
-            media_category: self.media_category.clone(),
-            media_type: self.media_type.clone(),
-        }
-    }
+#[derive(Debug, thiserror::Error)]
+pub enum MediaUploadError {
+    #[error("Attachment download error")]
+    AttachmentError,
+    #[error("Media upload error: {0}")]
+    UploadError(twapi_v2::error::Error),
 }
 
 pub async fn upload_media(
     token: &str,
     attachment: &Attachment,
-) -> Result<MediaUploadResult, Box<dyn std::error::Error + Send + Sync>> {
-    let client = Client::new();
-    let url = "https://upload.twitter.com/1.1/media/upload.json";
+    additional_owners: Vec<String>,
+) -> Result<String, MediaUploadError> {
+    let auth = BearerAuthentication::new(token);
 
-    let data = attachment.download().await?;
+    let media_type = attachment
+        .content_type
+        .as_ref()
+        .expect("attachment content type is missing");
+    let media_category = detect_media_category(media_type);
 
-    let init_response = init::init(&client, url, token, attachment).await?;
-    let media_id = init_response.media_id;
+    let data = attachment.download().await.map_err(|_| MediaUploadError::AttachmentError)?;
 
-    append::append(&client, url, token, &media_id, data).await?;
+    let (response, _header) = upload_media_from_bytes(
+        &data,
+        media_type,
+        media_category,
+        additional_owners,
+        &auth,
+        None,
+    )
+    .await
+    .map_err(MediaUploadError::UploadError)?;
 
-    finalize::finalize(&client, url, token, &media_id).await
+    let media_id = get_media_id(&response);
+
+    tracing::info!(media_id = media_id, "start uploading media");
+
+    check_processing(
+        response,
+        &auth,
+        Some(|count, _response: &_, _header: &_| {
+            if count > 100 {
+                Err(twapi_v2::error::Error::Upload("over counts".to_owned()))
+            } else {
+                Ok(())
+            }
+        }),
+        None,
+    )
+    .await
+    .map_err(MediaUploadError::UploadError)?;
+    tracing::info!(media_id = media_id, "end uploading media");
+
+    Ok(media_id)
+}
+
+fn detect_media_category(content_type: &str) -> Option<MediaCategory> {
+    match content_type {
+        "image/gif" => Some(MediaCategory::TweetGif),
+        t if t.starts_with("image") => Some(MediaCategory::TweetImage),
+        t if t.starts_with("video") => Some(MediaCategory::TweetVideo),
+        _ => None,
+    }
 }

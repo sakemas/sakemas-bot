@@ -16,6 +16,14 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
             twitter_text::parse(&message.content, twitter_text_config::config_v3(), true);
 
         if parse_result.is_valid {
+            if message.attachments.len() > 4 {
+                message
+                    .reply(&ctx.http, "画像は4枚までです。")
+                    .await
+                    .unwrap();
+                return;
+            }
+
             let (proceed, mut reply) = get_confirmation_serenity(
                 ctx,
                 message,
@@ -52,7 +60,7 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                             )
                             .await
                             .unwrap();
-                        info!("Failed to get access token: {:?}", e);
+                        info!("Failed to get access token: {e:?}");
                         return;
                     }
                 };
@@ -63,7 +71,7 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                         if let Some(data) = result.data {
                             let id = data.id.clone();
                             let message = match id {
-                                Some(id) => format!("ポストしました。\n`id: {}`\nhttps://x.com/sakemasdiscord/status/{}", id, id),
+                                Some(id) => format!("ポストしました。\nid: `{id}`\nhttps://x.com/sakemasdiscord/status/{id}"),
                                 None => "ポストしました。".to_string(),
                             };
 
@@ -73,18 +81,6 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                                 .unwrap();
 
                             info!("Tweet successfully\n{:?}", data);
-                        } else {
-                            reply
-                                .edit(
-                                    &ctx.http,
-                                    EditMessage::new()
-                                        .content(format!("ポストに失敗しました。\n```title: {:?}\nresult_type: {:?}\nstatus: {:?}\ndetail: {:?}```", result.title, result.result_type, result.status, result.detail))
-                                        .components(Vec::new()),
-                                )
-                                .await
-                                .unwrap();
-
-                            info!("Failed to tweet\n{:?}", result);
                         }
                     }
                     Err(e) => {
@@ -92,7 +88,7 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                             .edit(
                                 &ctx.http,
                                 EditMessage::new()
-                                    .content(format!("ポストに失敗しました。\n```{:?}```", e))
+                                    .content(format!("ポストに失敗しました。\n```{e:?}```"))
                                     .components(Vec::new()),
                             )
                             .await
