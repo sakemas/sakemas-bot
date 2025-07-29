@@ -62,10 +62,12 @@ async fn main(
         })
         .options(poise::FrameworkOptions {
             commands: vec![
+                // VC Announcement
                 get_vc_announcement(),
                 list_vc_announcements(),
                 add_vc_announcement(),
                 delete_all_vc_announcements(),
+                // Twitter
                 delete_tweet(),
                 set_twitter_tokens(),
             ],
