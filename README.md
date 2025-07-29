@@ -1,5 +1,11 @@
 # SAKEM@S bot
 
+Discordサーバー "**SAKEM@S**" 専用bot。
+
+*main*ブランチへのmergeにより、自動的にデプロイされます。
+
+実行環境: https://www.shuttle.dev/
+
 ## 機能
 
 - [x] 新規メンバー加入時のリアクション
@@ -20,8 +26,7 @@
 ### 環境変数
 
 ```toml
-# ./Secrets.toml
-# and ./Secrets.dev.toml for development
+# ./Secrets.dev.toml for development
 
 DISCORD_TOKEN = '***'
 VC_ANNOUNCEMENT_CHANNEL = '***'
