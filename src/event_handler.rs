@@ -16,10 +16,9 @@ pub async fn event_handler(
         serenity::FullEvent::Ready { data_about_bot, .. } => {
             println!("Logged in as {}", data_about_bot.user.name);
 
-            tokio::spawn(schedule_vc_announcement(
-                ctx.http.clone(),
-                "0 0 13 * * Fri *",
-            ));
+            tokio::spawn(
+                schedule_vc_announcement(ctx.http.clone())
+            );
         }
         serenity::FullEvent::Message { new_message } => {
             message::tweet::post(ctx, new_message, data).await;
