@@ -1,6 +1,6 @@
 [package]
 name = "sakemas-bot"
-version = "0.0.5"
+version = "0.0.6"
 edition = "2024"
 publish = false
 
@@ -10,9 +10,9 @@ chrono = "0.4"
 cron = "0.15"
 futures = "0.3.31"
 poise = { version = "0.6.1", features = ["collector"] }
-shuttle-runtime = "0.56"
-shuttle-serenity = "0.56"
-shuttle-shared-db = { version = "0.56", features = ["postgres", "sqlx"] }
+shuttle-runtime = { version = "0.57", features = ["setup-otel-exporter"] }
+shuttle-serenity = "0.57"
+shuttle-shared-db = { version = "0.57", features = ["postgres", "sqlx"] }
 sqlx = { version = "0.8.6", features = ["runtime-tokio", "macros"] }
 thiserror = "2.0"
 tokio = { version = "1.47", features = ["full"] }
