@@ -1,6 +1,7 @@
 /target
 .shuttle-storage
 Secrets*.toml
+.env
 .DS_Store
 
 /.zed

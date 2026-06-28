@@ -2,9 +2,9 @@
 
 Discordサーバー "**SAKEM@S**" 専用bot。
 
-*main*ブランチへのmergeにより、自動的にデプロイされます。
+*main*ブランチへのmergeにより、自動的にデプロイされる予定です。
 
-実行環境: https://www.shuttle.dev/
+実行環境については `design/adr/0001-runtime-environment.md` を参照してください。
 
 ## 機能
 
@@ -21,16 +21,32 @@ Discordサーバー "**SAKEM@S**" 専用bot。
 - [ ] Blueskyとの連携
 - [ ] AIによる告知文生成
 
+## 設計
+
+アーキテクチャ決定は `design/adr/` に記録されています。
+
 ## 開発
 
 ### 環境変数
 
-```toml
-# ./Secrets.dev.toml for development
+1. `.env.example` を `.env` にコピーします。
+2. 開発時は `Secrets.dev.toml` の値を `.env` に移行します。`Secrets.dev.toml` は `.gitignore` 対象ですが、移行後は作業ツリーから削除してください。
+3. 本番値は OCI VM 上の `.env` に直接設定します。
 
-DISCORD_TOKEN = '***'
-VC_ANNOUNCEMENT_CHANNEL = '***'
-WELCOME_CHANNEL = '***'
-CAUTION_CHANNEL = '***'
-INTRODUCTION_CHANNEL = '***'
+```bash
+cp .env.example .env
+```
+
+```env
+# ./.env for development
+
+DATABASE_URL='postgresql://postgres:password@localhost:5432/sakemas_bot'
+DISCORD_TOKEN='***'
+TWITTER_CLIENT_ID='***'
+TWITTER_CLIENT_SECRET='***'
+VC_ANNOUNCEMENT_CHANNEL='***'
+WELCOME_CHANNEL='***'
+CAUTION_CHANNEL='***'
+INTRODUCTION_CHANNEL='***'
+X_POSTER_CHANNEL='***'
 ```
