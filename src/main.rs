@@ -4,6 +4,7 @@ extern crate tracing;
 use anyhow::Context as _;
 use chrono::{DateTime, Utc};
 use poise::serenity_prelude::{ClientBuilder, GatewayIntents};
+use songbird::SerenityInit;
 use sqlx::PgPool;
 use std::sync::{Arc, Mutex};
 
@@ -64,6 +65,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 // Twitter
                 delete_tweet(),
                 set_twitter_tokens(),
+                // Voice
+                join(),
+                leave(),
+                play_url(),
+                play_file(),
+                stop(),
             ],
             event_handler: |ctx, event, framework, data| {
                 Box::pin(event_handler(ctx, event, framework, data))
@@ -74,6 +81,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let mut client = ClientBuilder::new(discord_token, intents)
         .framework(framework)
+        .register_songbird()
         .await
         .context("failed to build Discord client")?;
 
