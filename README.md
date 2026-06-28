@@ -50,3 +50,25 @@ CAUTION_CHANNEL='***'
 INTRODUCTION_CHANNEL='***'
 X_POSTER_CHANNEL='***'
 ```
+
+### Docker Compose
+
+ローカルで PostgreSQL を立ち上げて動作確認する場合：
+
+```bash
+docker compose up -d db
+```
+
+ビルド確認：
+
+```bash
+docker compose build
+```
+
+本番同等の構成で bot も起動する場合は、`.env` を設定した上で：
+
+```bash
+docker compose up -d
+```
+
+ただし、同じ `DISCORD_TOKEN` を使った bot が複数起動すると Discord Gateway で競合するため、本番移行完了までは app サービスをローカルで常時起動しないでください。
