@@ -2,11 +2,11 @@ use chrono::Utc;
 use poise::CreateReply;
 
 use crate::{
-    utils::{
-        command::{get_confirmation_poise, ConfirmStyle},
-        twitter::{delete_post, get_access_token, TwitterError},
-    },
     Context, Error,
+    utils::{
+        command::{ConfirmStyle, get_confirmation_poise},
+        twitter::{TwitterError, delete_post, get_access_token},
+    },
 };
 
 /// 管理人のみ: TwitterのAccess TokenとRefresh Tokenを初期化します。
@@ -72,7 +72,11 @@ pub async fn delete_tweet(
     let token = get_access_token(data).await?;
     let access_token = match token.access_token.as_ref() {
         Some(token) => token,
-        None => return Err(Box::new(TwitterError::Other("Access token not found".to_string()))),
+        None => {
+            return Err(Box::new(TwitterError::Other(
+                "Access token not found".to_string(),
+            )));
+        }
     };
 
     let proceed = get_confirmation_poise(

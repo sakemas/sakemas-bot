@@ -8,12 +8,10 @@ publish = false
 anyhow = "1.0"
 chrono = "0.4"
 cron = "0.15"
+dotenvy = "0.15"
 futures = "0.3.31"
 poise = { version = "0.6.1", features = ["collector"] }
-shuttle-runtime = { version = "0.57", features = ["setup-otel-exporter"] }
-shuttle-serenity = "0.57"
-shuttle-shared-db = { version = "0.57", features = ["postgres", "sqlx"] }
-sqlx = { version = "0.8.6", features = ["runtime-tokio", "macros"] }
+sqlx = { version = "0.8.6", features = ["runtime-tokio", "macros", "postgres"] }
 thiserror = "2.0"
 tokio = { version = "1.47", features = ["full"] }
 tracing = "0.1.41"

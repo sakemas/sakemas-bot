@@ -1,6 +1,6 @@
 use poise::{
-    serenity_prelude::{self as serenity, EditMessage},
     CreateReply,
+    serenity_prelude::{self as serenity, EditMessage},
 };
 use serenity::{
     ComponentInteraction, ComponentInteractionCollector, CreateActionRow, CreateButton,
@@ -8,7 +8,7 @@ use serenity::{
 };
 use std::time::Duration;
 
-use crate::{utils::reaction::CustomReaction, Context, Error};
+use crate::{Context, Error, utils::reaction::CustomReaction};
 
 pub enum ConfirmStyle {
     YesNo,

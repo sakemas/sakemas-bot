@@ -1,8 +1,8 @@
 use poise::CreateReply;
 
 use crate::{
-    utils::command::{get_confirmation_poise, ConfirmStyle},
     Context, Error,
+    utils::command::{ConfirmStyle, get_confirmation_poise},
 };
 
 /// 管理人のみ: VC呑み告知を取得し、使用回数を増やします。

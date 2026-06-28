@@ -17,7 +17,9 @@ pub async fn schedule_vc_announcement(http: Arc<Http>) {
     for next_event in schedule.upcoming(Utc).take(10) {
         let delay = next_event - now;
         time::sleep(delay.to_std().unwrap()).await;
-        let _ = channel_id.say(&http, "@everyone 金曜日 22時定例、VC呑みの時間です！").await;
+        let _ = channel_id
+            .say(&http, "@everyone 金曜日 22時定例、VC呑みの時間です！")
+            .await;
         info!("Scheduled event: {:?}", next_event);
         now = Utc::now();
     }

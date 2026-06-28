@@ -2,12 +2,12 @@ use poise::serenity_prelude::{self as serenity, EditMessage};
 use serenity::{Context, Message};
 
 use crate::{
+    Data,
     utils::{
         channel::Channel,
-        command::{get_confirmation_serenity, ConfirmStyle},
+        command::{ConfirmStyle, get_confirmation_serenity},
         twitter::{self, get_access_token},
     },
-    Data,
 };
 
 pub async fn post(ctx: &Context, message: &Message, data: &Data) {
@@ -71,7 +71,9 @@ pub async fn post(ctx: &Context, message: &Message, data: &Data) {
                         if let Some(data) = result.data {
                             let id = data.id.clone();
                             let message = match id {
-                                Some(id) => format!("ポストしました。\nid: `{id}`\nhttps://x.com/sakemasdiscord/status/{id}"),
+                                Some(id) => format!(
+                                    "ポストしました。\nid: `{id}`\nhttps://x.com/sakemasdiscord/status/{id}"
+                                ),
                                 None => "ポストしました。".to_string(),
                             };
 

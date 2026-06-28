@@ -1,15 +1,14 @@
 use poise::serenity_prelude::Attachment;
-use shuttle_runtime::SecretStore;
 use sqlx::FromRow;
 use thiserror::Error;
 use twapi_v2::{
     api::{
-        delete_2_tweets_id, get_2_tweets_id, post_2_oauth2_token_refresh_token, post_2_tweets::{self, Media}, BearerAuthentication
+        BearerAuthentication, delete_2_tweets_id, get_2_tweets_id,
+        post_2_oauth2_token_refresh_token,
+        post_2_tweets::{self, Media},
     },
     error::Error,
 };
-
-use crate::utils::secret::get_secret;
 
 mod access_token;
 pub mod media;
@@ -63,9 +62,10 @@ pub async fn tweet(
         media,
         ..Default::default()
     };
-    let (response, _header) = post_2_tweets::Api::new(body).execute(&auth).await.map_err(|e| {
-        Box::new(TwitterError::Other(e.to_string()))
-    })?;
+    let (response, _header) = post_2_tweets::Api::new(body)
+        .execute(&auth)
+        .await
+        .map_err(|e| Box::new(TwitterError::Other(e.to_string())))?;
 
     Ok(response)
 }
@@ -82,7 +82,8 @@ pub async fn upload_media(
         let token = token.to_owned();
         let attachment = attachment.clone();
 
-        let task = tokio::spawn(async move { media::upload_media(&token, &attachment, vec![]).await });
+        let task =
+            tokio::spawn(async move { media::upload_media(&token, &attachment, vec![]).await });
 
         tasks.push(task);
     }
@@ -98,38 +99,30 @@ pub async fn upload_media(
 pub async fn check_is_our_post(
     token: &str,
     post_id: &str,
-    secret_store: &SecretStore,
+    twitter_client_id: &str,
 ) -> Result<Option<bool>, TwitterError> {
     let auth = BearerAuthentication::new(token);
 
-    let (response, _header) = get_2_tweets_id::Api::new(post_id).execute(&auth).await.map_err(|e| {
-        TwitterError::ApiError(e)
-    })?;
+    let (response, _header) = get_2_tweets_id::Api::new(post_id)
+        .execute(&auth)
+        .await
+        .map_err(TwitterError::ApiError)?;
     let tweet = match response.data {
         Some(data) => data,
         None => return Err(TwitterError::NotFound),
     };
     let author = tweet.author_id.as_ref();
 
-    Ok(
-        match author {
-            Some(author) => Some(author == &get_secret(secret_store, "TWITTER_CLIENT_ID").map_err(|e| {
-                TwitterError::Other(e.to_string())
-            })?),
-            None => None,
-        }
-    )
+    Ok(author.map(|author| author == twitter_client_id))
 }
 
-pub async fn delete_post(
-    token: &str,
-    post_id: &str,
-) -> Result<(), TwitterError> {
+pub async fn delete_post(token: &str, post_id: &str) -> Result<(), TwitterError> {
     let auth = BearerAuthentication::new(token);
 
-    let (_response, _header) = delete_2_tweets_id::Api::new(post_id).execute(&auth).await.map_err(|e| {
-        TwitterError::ApiError(e)
-    })?;
+    let (_response, _header) = delete_2_tweets_id::Api::new(post_id)
+        .execute(&auth)
+        .await
+        .map_err(TwitterError::ApiError)?;
 
     Ok(())
 }
