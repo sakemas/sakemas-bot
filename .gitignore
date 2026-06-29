@@ -6,3 +6,7 @@ Secrets*.toml
 
 /.zed
 .shuttle*
+
+# Nix build outputs
+result
+result-*
