@@ -43,12 +43,14 @@ A NixOS alternative would not extend the existing Docker abstraction. It would r
 Continue with the accepted Docker Compose setup.
 
 Benefits:
+
 - Already implemented and validated on ARM64.
 - Familiar to the maintainer.
 - Easy to reproduce locally with `docker compose up`.
 - PostgreSQL upgrades and backups follow well-documented container patterns.
 
 Drawbacks:
+
 - Docker daemon is an extra service on the VM.
 - Reproducibility depends on image tags and manual VM configuration.
 - The VM OS itself is not declarative.
@@ -58,12 +60,14 @@ Drawbacks:
 Build a complete NixOS qcow2 image for OCI. The image includes the bot package, a PostgreSQL NixOS service, a systemd unit for the bot, and SSH access. The image is built on an `aarch64-linux` host or remote builder.
 
 Benefits:
+
 - The entire system (kernel, bootloader, PostgreSQL, bot, firewall) is declared in the flake.
 - No Docker daemon or Compose runtime on the deployed VM.
 - Rollbacks are possible via NixOS generations.
 - Secrets stay out of the Nix store if loaded via `EnvironmentFile`.
 
 Drawbacks:
+
 - Requires an `aarch64-linux` builder (e.g., an OCI ARM VM) to produce the image.
 - The maintainer must learn NixOS concepts (modules, generations, store).
 - Secrets file must be placed on the running VM after the image boots.
@@ -75,10 +79,12 @@ Drawbacks:
 Use NixOS only to provision the VM and run the existing Docker Compose stack declaratively (for example, with `arion` or `virtualisation.oci-containers`).
 
 Benefits:
+
 - Keeps the existing `docker-compose.yml` mostly intact.
 - Gains declarative OS provisioning without rewriting the application runtime.
 
 Drawbacks:
+
 - Adds NixOS complexity without removing Docker.
 - Two abstraction layers (NixOS + containers) instead of one.
 - Does not reduce runtime moving parts.
@@ -90,12 +96,14 @@ Drawbacks:
 1. `nix build .#packages.aarch64-linux.oci-image` completes on an `aarch64-linux` builder.
 2. The produced qcow2 image boots as an OCI custom image.
 3. PostgreSQL initializes and the `sakemas_bot` database and user exist.
-4. After placing `/etc/sakemas-bot/secrets.env`, the bot service starts and connects to Discord.
-5. A reboot leaves the bot running without manual intervention.
+4. After placing `/etc/sakemas-bot/secrets.env` with correct systemd `EnvironmentFile` format, the bot service starts and connects to Discord.
+5. PostgreSQL credentials are bootstrapped (manual password set) and match the value in `secrets.env`.
+6. A reboot leaves the bot running without manual intervention.
 
 Until those steps are completed, **Alternative A remains the accepted path**. If validation succeeds, this ADR will be updated to `accepted` and will supersede `design/adr/0004-containerization.md`.
 
 Rationale for the proposed direction:
+
 - The project values simplicity and low cost, but it also values reproducibility and single-source-of-truth configuration. A working NixOS flake would make the whole VM reproducible from one repository.
 - The prototype already exists: `flake.nix` defines `nixosConfigurations.sakemas-oci`, and `nix flake check --no-build` passes.
 - The main blocker is hardware access for the final image build and boot test, not a design flaw in the NixOS approach.
@@ -103,15 +111,18 @@ Rationale for the proposed direction:
 ## Consequences
 
 Positive if accepted:
+
 - One repository defines the application code, package, database, and OS.
 - VM configuration drift is eliminated.
 - NixOS generations provide a recovery path after bad changes.
 - No Docker daemon to update or debug.
 
 Negative if accepted:
+
 - The maintainer must operate a NixOS system, which has a learning curve.
 - Image builds require an `aarch64-linux` environment (initial OCI VM, remote builder, or QEMU emulation).
 - Secrets bootstrap is a manual post-boot step unless a secrets manager is added.
+- PostgreSQL upgrades and major NixOS channel updates require NixOS-specific knowledge and may need data migration.
 - If validation fails, effort spent on NixOS prototyping is partially lost.
 
 ## Required Axes Impact

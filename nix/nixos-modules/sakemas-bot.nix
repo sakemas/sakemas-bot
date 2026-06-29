@@ -92,6 +92,7 @@ in
         ExecStart = "${cfg.package}/bin/sakemas-bot";
         Restart = "on-failure";
         RestartSec = "10s";
+        UMask = "0027";
 
         # Hardening
         NoNewPrivileges = true;
