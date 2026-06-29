@@ -10,6 +10,13 @@ Discordサーバー "**SAKEM@S**" 専用bot。
 
 実行環境については `design/adr/0001-runtime-environment.md` を参照してください。
 
+### NixOS 評価中
+
+NixOS による宣言的デプロイも検討中です。現時点では Docker Compose が採用済みの構成です。
+
+- 調査結果: `design/adr/0006-nixos-deployment.md`
+- 実験的な手順: `docs/deployment-nixos.md`
+
 ## 機能
 
 - [x] 新規メンバー加入時のリアクション
