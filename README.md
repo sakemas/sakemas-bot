@@ -4,6 +4,10 @@ Discordサーバー "**SAKEM@S**" 専用bot。
 
 *main*ブランチへのmergeにより、自動的にデプロイされる予定です。
 
+## デプロイ
+
+本番デプロイ手順は `docs/deployment.md` を参照してください。
+
 実行環境については `design/adr/0001-runtime-environment.md` を参照してください。
 
 ## 機能
