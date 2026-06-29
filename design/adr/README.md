@@ -26,3 +26,9 @@ This directory contains the architectural decisions that shape SAKEM@S bot. Each
 | [0003](0003-secrets-management.md)  | Secrets Management   | accepted |
 | [0004](0004-containerization.md)    | Containerization     | accepted |
 | [0005](0005-songbird.md)            | Songbird Integration | accepted |
+
+## Proposed ADRs
+
+| Number                           | Title                        | Status   |
+| -------------------------------- | ---------------------------- | -------- |
+| [0006](0006-nixos-deployment.md) | NixOS Deployment Feasibility | proposed |
