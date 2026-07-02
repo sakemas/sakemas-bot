@@ -29,6 +29,7 @@ This directory contains the architectural decisions that shape SAKEM@S bot. Each
 
 ## Proposed ADRs
 
-| Number                           | Title                        | Status   |
-| -------------------------------- | ---------------------------- | -------- |
-| [0006](0006-nixos-deployment.md) | NixOS Deployment Feasibility | proposed |
+| Number                                         | Title                          | Status   |
+| ---------------------------------------------- | ------------------------------ | -------- |
+| [0006](0006-nixos-deployment.md)               | NixOS Deployment Feasibility   | proposed |
+| [0007](0007-northflank-sandbox-feasibility.md) | Northflank Sandbox Feasibility | proposed |

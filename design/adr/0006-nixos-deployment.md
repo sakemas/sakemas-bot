@@ -100,7 +100,7 @@ Drawbacks:
 5. PostgreSQL credentials are bootstrapped (manual password set) and match the value in `secrets.env`.
 6. A reboot leaves the bot running without manual intervention.
 
-Until those steps are completed, **Alternative A remains the accepted path**. If validation succeeds, this ADR will be updated to `accepted` and will supersede `design/adr/0004-containerization.md`.
+Until those steps are completed, **Alternative A remains the accepted path**. In addition, `design/adr/0007-northflank-sandbox-feasibility.md` proposes using Northflank Sandbox as an interim runtime while OCI capacity is unavailable. If validation succeeds, this ADR will be updated to `accepted` and will supersede `design/adr/0004-containerization.md`.
 
 Rationale for the proposed direction:
 
