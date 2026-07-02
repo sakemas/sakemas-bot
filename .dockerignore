@@ -1,0 +1,12 @@
+/target
+/.git
+/.github
+/.zed
+/.shuttle*
+/.agents
+/design
+.env
+.env.example
+Secrets*.toml
+*.md
+Makefile

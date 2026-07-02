@@ -1,14 +1,14 @@
 mod idol;
 mod twitter;
 mod vc_announcement;
+mod voice;
 
 // pub use idol::add_idol;
-pub use twitter::{
-    delete_tweet, set_twitter_tokens,
-};
+pub use twitter::{delete_tweet, set_twitter_tokens};
 pub use vc_announcement::{
-    add_vc_announcement, delete_all_vc_announcements, get_vc_announcement, list_vc_announcements
+    add_vc_announcement, delete_all_vc_announcements, get_vc_announcement, list_vc_announcements,
 };
+pub use voice::{join, leave, play_file, play_url, stop};
 
 /*
 /// ヘルプメニューを表示します

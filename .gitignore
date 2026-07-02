@@ -1,7 +1,12 @@
 /target
 .shuttle-storage
 Secrets*.toml
+.env
 .DS_Store
 
 /.zed
 .shuttle*
+
+# Nix build outputs
+result
+result-*

@@ -1,6 +1,6 @@
 use poise::serenity_prelude::Attachment;
 use twapi_v2::{
-    api::{post_2_media_upload_initialize::MediaCategory, BearerAuthentication},
+    api::{BearerAuthentication, post_2_media_upload_initialize::MediaCategory},
     upload_v2::{check_processing, get_media_id},
 };
 
@@ -28,7 +28,10 @@ pub async fn upload_media(
         .expect("attachment content type is missing");
     let media_category = detect_media_category(media_type);
 
-    let data = attachment.download().await.map_err(|_| MediaUploadError::AttachmentError)?;
+    let data = attachment
+        .download()
+        .await
+        .map_err(|_| MediaUploadError::AttachmentError)?;
 
     let (response, _header) = upload_media_from_bytes(
         &data,
@@ -48,13 +51,16 @@ pub async fn upload_media(
     check_processing(
         response,
         &auth,
-        Some(|count, _response: &_, _header: &_| {
-            if count > 100 {
-                Err(twapi_v2::error::Error::Upload("over counts".to_owned()))
-            } else {
-                Ok(())
-            }
-        }),
+        Some(
+            #[allow(clippy::result_large_err)]
+            |count, _response: &_, _header: &_| {
+                if count > 100 {
+                    Err(twapi_v2::error::Error::Upload("over counts".to_owned()))
+                } else {
+                    Ok(())
+                }
+            },
+        ),
         None,
     )
     .await

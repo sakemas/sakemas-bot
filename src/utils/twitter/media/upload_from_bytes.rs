@@ -1,9 +1,9 @@
 use std::io::Cursor;
 use twapi_v2::{
     api::{
-        post_2_media_upload_id_append, post_2_media_upload_id_finalize,
+        Authentication, TwapiOptions, post_2_media_upload_id_append,
+        post_2_media_upload_id_finalize,
         post_2_media_upload_initialize::{self, MediaCategory},
-        Authentication, TwapiOptions,
     },
     error::Error,
     headers::Headers,

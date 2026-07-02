@@ -1,9 +1,9 @@
 use poise::serenity_prelude::{
-    model::{guild::Member, mention::Mention},
     Context,
+    model::{guild::Member, mention::Mention},
 };
 
-use crate::utils::{channel::Channel, Mentionable};
+use crate::utils::{Mentionable, channel::Channel};
 
 /// Send a welcome message to the welcome channel when a new member joins.
 pub async fn addition(ctx: &Context, new_member: &Member) {
@@ -14,7 +14,9 @@ pub async fn addition(ctx: &Context, new_member: &Member) {
 
     let message = format!(
         "{}さん、アイマスとお酒のDiscord、SAKEM@Sへようこそ。\n{}をご一読の上、ぜひ{}をお願いします！",
-        mention, Channel::Caution.mention(), Channel::Introduction.mention()
+        mention,
+        Channel::Caution.mention(),
+        Channel::Introduction.mention()
     );
 
     let _ = post_channel.say(&ctx.http, message).await;
